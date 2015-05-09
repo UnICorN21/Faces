@@ -1,11 +1,13 @@
 package com.unicorn.faces.app.natives;
 
-import android.graphics.Bitmap;
-
 /**
  * Created by Huxley on 5/9/15.
  */
 public class FaceDetector {
+    static {
+        System.loadLibrary("libfaces");
+    }
+
     public class Face {
         public float topLeft;
         public float topRight;
@@ -13,11 +15,6 @@ public class FaceDetector {
         public float bottomRight;
     }
 
-    private native boolean init(String cascadeFile);
-
-    public FaceDetector() {
-        // TODO
-    }
-
-    public native Face[] findFaces(Bitmap bitmap);
+    public static native void load(String cascadeFile);
+    public static native Face[] findFaces(byte[] data, int width, int height);
 }

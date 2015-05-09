@@ -7,10 +7,10 @@ include $(CLEAR_VARS)
 #OPENCV_LIB_TYPE:=SHARED
 include /Users/huxley/Downloads/OpenCV-android-sdk/sdk/native/jni/OpenCV.mk
 
-LOCAL_SRC_FILES  := DetectionBasedTracker_jni.cpp # TODO: Change it!
+LOCAL_SRC_FILES  := FaceDetector.cpp # TODO: Change it!
 LOCAL_C_INCLUDES += $(LOCAL_PATH)
 LOCAL_LDLIBS     += -llog -ldl
 
-LOCAL_MODULE     := detection_based_tracker
+LOCAL_MODULE     := libfaces
 
 include $(BUILD_SHARED_LIBRARY)
