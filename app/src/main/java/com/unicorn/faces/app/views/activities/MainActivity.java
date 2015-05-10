@@ -82,6 +82,7 @@ public class MainActivity extends Activity {
         preview.addView(mFaceMask);
 
         Button captureButton = (Button) findViewById(R.id.button_capture);
+        final Button flashButton = (Button) findViewById(R.id.button_flash);
         captureButton.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
@@ -90,6 +91,12 @@ public class MainActivity extends Activity {
                     }
                 }
         );
+        flashButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mPreview.switchFlash();
+            }
+        });
     }
 
 

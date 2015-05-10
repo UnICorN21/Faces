@@ -14,6 +14,7 @@ import android.view.SurfaceView;
 import android.widget.Toast;
 import com.unicorn.faces.app.R;
 import com.unicorn.faces.app.natives.FaceDetector;
+import com.unicorn.faces.app.views.activities.MainActivity;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
@@ -27,7 +28,7 @@ import java.util.concurrent.FutureTask;
  * Created by Huxley on 5/6/15.
  */
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback,
-        Camera.PreviewCallback, Camera.AutoFocusCallback {
+        Camera.PreviewCallback {
 
     private static final String TAG = "faces";
 
@@ -35,6 +36,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private SurfaceHolder mHolder;
     private Camera mCamera;
     private FaceMask mFaceMask;
+    private boolean flashOn;
 
     private FaceDetector mDetector;
 
@@ -42,17 +44,11 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private FutureTask<FaceDetector.Face[]> mDetectFuture;
     private Long lastDetectTime;
 
-    @Override
-    public void onAutoFocus(boolean isSuccess, Camera camera) {
-        if (!isSuccess) {
-            Log.d(TAG, "Camera auto focus failed");
-        }
-    }
-
     public CameraPreview(Context context, FaceMask faceMask) {
         super(context);
         mContext = context;
         mFaceMask = faceMask;
+        flashOn = false;
 
         mHolder = getHolder();
         mHolder.addCallback(this);
@@ -95,6 +91,9 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             mCamera = Camera.open(frontCameraIdx);
             mCamera.setPreviewDisplay(surfaceHolder);
             mCamera.startPreview();
+
+            Camera.Parameters params = mCamera.getParameters();
+            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
         } catch (IOException e) {
             Log.d(TAG, "Error setting camera preview: " + e.getMessage());
             mCamera.release();
@@ -113,7 +112,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
         mCamera.setDisplayOrientation(90);
         mCamera.setPreviewCallback(this);
-        mCamera.autoFocus(this);
 
         // start preview with new settings
         try {
@@ -128,6 +126,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         try {
+            if (flashOn) switchFlash();
             mCamera.stopPreview();
             mCamera.setPreviewCallback(null);
             mCamera.release();
@@ -173,5 +172,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             Log.d(TAG, e.getMessage());
             // Ignored, the camera may be released.
         }
+    }
+
+    public void switchFlash() {
+        Camera.Parameters params = mCamera.getParameters();
+        if (flashOn) params.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+        else params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+        mCamera.setParameters(params);
+        flashOn = !flashOn;
     }
 }

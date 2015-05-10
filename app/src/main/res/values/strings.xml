@@ -2,4 +2,6 @@
     <string name="app_name">Faces</string>
     <string name="action_settings">Settings</string>
     <string name="capture">Capture</string>
+    <string name="flash_on">Flash on</string>
+    <string name="flash_off">Flash off</string>
 </resources>

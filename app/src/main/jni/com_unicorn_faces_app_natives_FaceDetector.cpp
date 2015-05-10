@@ -49,7 +49,10 @@ JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_f
     std::vector<unsigned char> vec_obj;
     for ( unsigned int i = 0; i < length; i++ ) vec_obj.push_back(_data[i]);
     cv::Mat buf_obj(vec_obj, false);
-    cv::Mat mat = cv::imdecode(buf_obj, 0);
+    cv::Mat mid = cv::imdecode(buf_obj, cv::IMREAD_GRAYSCALE), mat;
+    // Trick! Rotate the image by 90 degree, it couldn't detect anything otherwise!
+    cv::transpose(mid, mat);
+    cv::flip(mat, mat, 0);
 
     std::vector<cv::Rect> faceVector;
     detector.detectMultiScale(mat, faceVector);
@@ -86,8 +89,8 @@ JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_f
         
         env->SetIntField(faceObj, faceX, faceVector[i].x);
         env->SetIntField(faceObj, faceY, faceVector[i].y);
-        env->SetIntField(faceObj, faceWidth, faceVector[i].width);
-        env->SetIntField(faceObj, faceHeight, faceVector[i].height);
+        env->SetIntField(faceObj, faceWidth, faceVector[i].height);
+        env->SetIntField(faceObj, faceHeight, faceVector[i].width);
         env->SetObjectArrayElement(faces, i, faceObj);
     }
     
