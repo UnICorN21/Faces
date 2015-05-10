@@ -7,7 +7,7 @@ include $(CLEAR_VARS)
 #OPENCV_LIB_TYPE:=SHARED
 include /Users/huxley/Downloads/OpenCV-android-sdk/sdk/native/jni/OpenCV.mk
 
-LOCAL_SRC_FILES  := FaceDetector.cpp # TODO: Change it!
+LOCAL_SRC_FILES  := com_unicorn_faces_app_natives_FaceDetector.cpp
 LOCAL_C_INCLUDES += $(LOCAL_PATH)
 LOCAL_LDLIBS     += -llog -ldl
 
