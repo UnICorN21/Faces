@@ -26,15 +26,5 @@ public class FaceDetector {
 
     public native boolean load(String cascadeFile);
     public native boolean empty();
-    public native Face[] findFaces(byte[] data, int width, int height);
-
-    public static void main(String [] args) {
-        try {
-            FaceDetector detector = FaceDetector.getSingleton();
-            boolean ok = detector.load("haarcascade_frontalface_default.xml");
-            System.out.println(!detector.empty());
-        } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-    }
+    public native Face[] findFaces(byte[] data, int length);
 }

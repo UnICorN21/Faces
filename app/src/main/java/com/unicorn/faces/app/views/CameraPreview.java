@@ -1,15 +1,27 @@
 package com.unicorn.faces.app.views;
 
+import android.app.Activity;
 import android.content.Context;
+import android.graphics.ImageFormat;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.nfc.Tag;
+import android.os.Environment;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Toast;
+import com.unicorn.faces.app.R;
+import com.unicorn.faces.app.natives.FaceDetector;
 
-import java.io.IOException;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 /**
  * Created by Huxley on 5/6/15.
@@ -24,12 +36,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private Camera mCamera;
     private FaceMask mFaceMask;
 
-    public static final String API_KEY = "aa558358150dfc9f4610010d4324b826";
-
-//    private FaceDetecter mFaceDetecter;
+    private FaceDetector mDetector;
 
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-//    private FutureTask<FaceDetecter.Face[]> mDetectFuture;
+    private FutureTask<FaceDetector.Face[]> mDetectFuture;
     private Long lastDetectTime;
 
     @Override
@@ -48,8 +58,28 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mHolder.addCallback(this);
         mHolder.setKeepScreenOn(true);
 
-//        mFaceDetecter = new FaceDetecter();
-//        mFaceDetecter.init(context, API_KEY);
+        mDetector = FaceDetector.getSingleton();
+        if (mDetector.empty()) {
+            try {
+                InputStream is = getResources().openRawResource(R.raw.haarcascade_frontalface_default);
+                File cascadeDir = ((Activity)context).getDir("cascade", Context.MODE_PRIVATE);
+                File cascadeFile = new File(cascadeDir, "haarcascade_frontalface_default.xml");
+                FileOutputStream os = new FileOutputStream(cascadeFile);
+
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    os.write(buffer, 0, bytesRead);
+                }
+                is.close();
+                os.close();
+
+                if (!mDetector.load(cascadeFile.getAbsolutePath()))
+                    throw new RuntimeException("Native method failed");
+            } catch (Exception e) {
+                Log.d(TAG, "Load cascade file failed: " + e.getMessage());
+            }
+        }
     }
 
     @Override
@@ -117,47 +147,27 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         try {
             final Camera.Size size = camera.getParameters().getPreviewSize();
             long now = System.currentTimeMillis();
-//            if (null == mDetectFuture && (null == lastDetectTime || 2000 < now - lastDetectTime)) {
-//                lastDetectTime = now;
-//                mDetectFuture = new FutureTask<FaceDetecter.Face[]>(new Callable<FaceDetecter.Face[]>() {
-//                    @Override
-//                    public FaceDetecter.Face[] call() throws Exception {
-//                        YuvImage image = new YuvImage(data, ImageFormat.NV21, size.width, size.height, null);
-//                        ByteArrayOutputStream os = new ByteArrayOutputStream(data.length);
-//                        if (!image.compressToJpeg(new Rect(0, 0, size.width, size.height), 100, os)) {
-//                            throw new RuntimeException("Cannot cast camera preview to jpeg.");
-//                        }
-//                        Bitmap bitmap = BitmapFactory.decodeByteArray(os.toByteArray(), 0, os.toByteArray().length);
-//
-//                        FileOutputStream fos = null;
-//                        try {
-//                            File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-//                                    Environment.DIRECTORY_PICTURES), "Faces");
-//
-//                            // Create the storage directory if it does not exist
-//                            if (! mediaStorageDir.exists()){
-//                                if (! mediaStorageDir.mkdirs()){
-//                                    Log.d(TAG, "failed to create directory");
-//                                    return null;
-//                                }
-//                            }
-//
-//                            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-//                            fos = new FileOutputStream(mediaStorageDir.getPath() + File.separator + "IMG_"+ timeStamp +".jpg");
-//                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
-//                        } catch (Exception e) {
-//                            Log.d(TAG, e.getMessage());
-//                        }
-//
-//                        FaceDetecter.Face[] faces = mFaceDetecter.findFaces(bitmap);
-//                        return faces;
-//                    }
-//                });
-//                executor.execute(mDetectFuture);
-//            } else if (mDetectFuture.isDone()) {
-//                mFaceMask.setFaceInfo(mDetectFuture.get());
-//                mDetectFuture = null;
-//            }
+            if (null == mDetectFuture && (null == lastDetectTime || 2000 < now - lastDetectTime)) {
+                lastDetectTime = now;
+                mDetectFuture = new FutureTask<FaceDetector.Face[]>(new Callable<FaceDetector.Face[]>() {
+                    @Override
+                    public FaceDetector.Face[] call() throws Exception {
+                        YuvImage img = new YuvImage(data, ImageFormat.NV21, size.width, size.height, null);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        if (!img.compressToJpeg(new Rect(0, 0, size.width, size.height), 100, baos)) {
+                            throw new RuntimeException("Can't convert YUV to JPEG.");
+                        }
+                        byte[] bytes = baos.toByteArray();
+
+                        return mDetector.findFaces(bytes, bytes.length);
+                    }
+                });
+
+                executor.execute(mDetectFuture);
+            } else if (mDetectFuture.isDone()) {
+                mFaceMask.setFaceInfo(mDetectFuture.get());
+                mDetectFuture = null;
+            }
 
         } catch (Exception e) {
             Log.d(TAG, e.getMessage());

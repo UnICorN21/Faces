@@ -8,18 +8,22 @@
 
 #include <jni.h>
 #include <stdio.h>
-#include <iostream>
 #include <string>
 #include <vector>
 
+#include <android/log.h>
+
 #include <opencv2/objdetect.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <opencv2/core/utility.hpp>
 
 #include "com_unicorn_faces_app_natives_FaceDetector.h"
 
-static cv::CascadeClassifier detector;
+#define TAG "libfaces"
+#define LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,TAG,__VA_ARGS__)
 
+static cv::CascadeClassifier detector;
 
 JNIEXPORT jboolean JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_load
 (JNIEnv *env, jobject obj, jstring cascadeFile) { // No release called. Memory leak might be caused here.
@@ -38,26 +42,33 @@ JNIEXPORT jboolean JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_empty
  * @return: A array of `Face`, `null` if no face is detected.
 **/
 JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_findFaces
-(JNIEnv *env, jobject obj, jbyteArray yuv, jint width, jint height) {
+(JNIEnv *env, jobject obj, jbyteArray data, jint length) {
     if (detector.empty()) return NULL;
-    
-    jbyte* _yuv = env->GetByteArrayElements(yuv, 0);
-    cv::Mat yuvMat(height + height / 2, width, CV_8UC1, (unsigned char*)_yuv);
-    cv::Mat grayMat;
-    cv::cvtColor(yuvMat, grayMat, CV_YUV2GRAY_NV21);
-    
+
+    jbyte* _data = env->GetByteArrayElements(data, 0);
+    std::vector<unsigned char> vec_obj;
+    for ( unsigned int i = 0; i < length; i++ ) vec_obj.push_back(_data[i]);
+    cv::Mat buf_obj(vec_obj, false);
+    cv::Mat mat = cv::imdecode(buf_obj, 0);
+
     std::vector<cv::Rect> faceVector;
-    detector.detectMultiScale(grayMat, faceVector);
+    detector.detectMultiScale(mat, faceVector);
     
-    env->ReleaseByteArrayElements(yuv, _yuv, JNI_ABORT);
-    
-    std::cout << "detect finished with " << faceVector.size() << " faces found." << std::endl;
+    env->ReleaseByteArrayElements(data, _data, JNI_ABORT);
+
+    LOGD("detect finished with %d faces found.", faceVector.size());
     
     jclass faceClass = env->FindClass("com/unicorn/faces/app/natives/FaceDetector$Face");
-    if (NULL == faceClass) return NULL;
+    if (NULL == faceClass) {
+        LOGD("Can't found class `FaceDetector$Face`.");
+        return NULL;
+    }
     
     jobjectArray faces = env->NewObjectArray((int)faceVector.size(), faceClass, NULL);
-    if (NULL == faces) return NULL;
+    if (NULL == faces) {
+        LOGD("`Can't allocate a `Face` array.");
+        return NULL;
+    }
     
     jmethodID faceInit = env->GetMethodID(faceClass, "<init>", "(Lcom/unicorn/faces/app/natives/FaceDetector;)V");
     jfieldID faceX = env->GetFieldID(faceClass, "x", "I");
@@ -66,9 +77,12 @@ JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_f
     jfieldID faceHeight = env->GetFieldID(faceClass, "height", "I");
     
     for (int i = 0; i < faceVector.size(); ++i) {
-        jobject faceObj = env->NewObject(faceClass, faceInit);
+        jobject faceObj = env->NewObject(faceClass, faceInit, NULL);
         
         if (NULL == faceObj) return NULL; // Error occur!!
+
+        LOGD("Face[%d]{x=%d, y=%d, width=%d, height=%d}", i,
+            faceVector[i].x, faceVector[i].y, faceVector[i].width, faceVector[i].height);
         
         env->SetIntField(faceObj, faceX, faceVector[i].x);
         env->SetIntField(faceObj, faceY, faceVector[i].y);
