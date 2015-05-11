@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
         }
     };
 
-    private static File getCapturedImageFile() {
+    public static File getCapturedImageFile() {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), "Faces");
 

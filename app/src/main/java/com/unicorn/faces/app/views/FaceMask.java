@@ -22,7 +22,7 @@ public class FaceMask extends View {
         rect = new RectF();
         localPaint = new Paint();
         localPaint.setColor(0xff00b4ff);
-        localPaint.setStrokeWidth(5);
+        localPaint.setStrokeWidth(3);
         localPaint.setStyle(Paint.Style.STROKE);
     }
 
