@@ -15,14 +15,14 @@ import com.unicorn.faces.app.natives.FaceDetector;
 public class FaceMask extends View {
     Paint localPaint = null;
     FaceDetector.Face[] faces = null;
-    Rect rect = null;
+    RectF rect = null;
 
     public FaceMask(Context context) {
         super(context);
-        rect = new Rect();
+        rect = new RectF();
         localPaint = new Paint();
         localPaint.setColor(0xff00b4ff);
-        localPaint.setStrokeWidth(5);
+        localPaint.setStrokeWidth(3);
         localPaint.setStyle(Paint.Style.STROKE);
     }
 
@@ -38,7 +38,7 @@ public class FaceMask extends View {
         if (faces == null)
             return;
         for (FaceDetector.Face face : faces) {
-           rect.set(face.x, face.y, face.x + face.width, face.y + face.height);
+            rect.set(face.x, face.y, face.x + face.width, face.y + face.height);
             canvas.drawRect(rect, localPaint);
         }
     }

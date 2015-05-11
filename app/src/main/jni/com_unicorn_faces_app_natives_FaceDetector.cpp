@@ -28,7 +28,9 @@ static cv::CascadeClassifier detector;
 JNIEXPORT jboolean JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_load
 (JNIEnv *env, jobject obj, jstring cascadeFile) { // No release called. Memory leak might be caused here.
     const char* _cascadeFile = env->GetStringUTFChars(cascadeFile, 0);
-    return detector.load(_cascadeFile);
+    jboolean result = detector.load(_cascadeFile);
+    env->ReleaseStringUTFChars(cascadeFile, _cascadeFile);
+    return result;
 }
 
 JNIEXPORT jboolean JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_empty
@@ -42,7 +44,7 @@ JNIEXPORT jboolean JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_empty
  * @return: A array of `Face`, `null` if no face is detected.
 **/
 JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_findFaces
-(JNIEnv *env, jobject obj, jbyteArray data, jint length) {
+(JNIEnv *env, jobject obj, jbyteArray data, jint length, jint degree, jboolean fixed) {
     if (detector.empty()) return NULL;
 
     jbyte* _data = env->GetByteArrayElements(data, 0);
@@ -50,12 +52,18 @@ JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_f
     for ( unsigned int i = 0; i < length; i++ ) vec_obj.push_back(_data[i]);
     cv::Mat buf_obj(vec_obj, false);
     cv::Mat mid = cv::imdecode(buf_obj, cv::IMREAD_GRAYSCALE), mat;
-    // Trick! Rotate the image by 90 degree, it couldn't detect anything otherwise!
-    cv::transpose(mid, mat);
-    cv::flip(mat, mat, 0);
+
+    // Rotate image by degree
+    switch (degree) {
+        case 0: mat = mid; break;
+        case 90: cv::transpose(mid, mat); break;
+        case 180: cv::flip(mid, mat, 0); break;
+        case 270: cv::transpose(mid, mat); cv::flip(mat, mat, 0); break;
+        default: return NULL;
+    }
 
     std::vector<cv::Rect> faceVector;
-    detector.detectMultiScale(mat, faceVector);
+    detector.detectMultiScale(mat, faceVector, 1.2, 3, 0, cv::Size(25, 25));
     
     env->ReleaseByteArrayElements(data, _data, JNI_ABORT);
 
@@ -84,13 +92,34 @@ JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_f
         
         if (NULL == faceObj) return NULL; // Error occur!!
 
+        if (fixed) {
+            int oldX = faceVector[i].x, oldY = faceVector[i].y;
+            switch (degree) {
+                case 0: break;
+                case 90:
+                    faceVector[i].y = mid.rows - faceVector[i].x - faceVector[i].width;
+                    faceVector[i].x = oldY;
+                    std::swap(faceVector[i].width, faceVector[i].height);
+                    break;
+                case 180:
+                    faceVector[i].x = mid.cols - faceVector[i].width - faceVector[i].x;
+                    faceVector[i].y = mid.rows - faceVector[i].height - faceVector[i].y;
+                    break;
+                case 270:
+                    faceVector[i].x = mid.cols - faceVector[i].y - faceVector[i].height;
+                    faceVector[i].y = oldX;
+                    std::swap(faceVector[i].width, faceVector[i].height);
+                    break;
+            }
+        }
+
         LOGD("Face[%d]{x=%d, y=%d, width=%d, height=%d}", i,
             faceVector[i].x, faceVector[i].y, faceVector[i].width, faceVector[i].height);
         
         env->SetIntField(faceObj, faceX, faceVector[i].x);
         env->SetIntField(faceObj, faceY, faceVector[i].y);
-        env->SetIntField(faceObj, faceWidth, faceVector[i].height);
-        env->SetIntField(faceObj, faceHeight, faceVector[i].width);
+        env->SetIntField(faceObj, faceWidth, faceVector[i].width);
+        env->SetIntField(faceObj, faceHeight, faceVector[i].height);
         env->SetObjectArrayElement(faces, i, faceObj);
     }
     

@@ -44,6 +44,8 @@ public class MainActivity extends Activity {
                 FileOutputStream fos = new FileOutputStream(pictureFile);
                 fos.write(data);
                 fos.close();
+
+
             } catch (FileNotFoundException e) {
                 Log.d(TAG, "File not found: " + e.getMessage());
             } catch (IOException e) {
@@ -52,7 +54,7 @@ public class MainActivity extends Activity {
         }
     };
 
-    private static File getCapturedImageFile() {
+    public static File getCapturedImageFile() {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES), "Faces");
 
@@ -82,7 +84,7 @@ public class MainActivity extends Activity {
         preview.addView(mFaceMask);
 
         Button captureButton = (Button) findViewById(R.id.button_capture);
-        final Button flashButton = (Button) findViewById(R.id.button_flash);
+        Button cameraSwitchButton = (Button) findViewById(R.id.button_cameraSwitch);
         captureButton.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
@@ -91,10 +93,10 @@ public class MainActivity extends Activity {
                     }
                 }
         );
-        flashButton.setOnClickListener(new View.OnClickListener() {
+        cameraSwitchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mPreview.switchFlash();
+                // TODO
             }
         });
     }

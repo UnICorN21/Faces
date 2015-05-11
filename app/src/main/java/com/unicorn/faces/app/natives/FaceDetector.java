@@ -26,5 +26,5 @@ public class FaceDetector {
 
     public native boolean load(String cascadeFile);
     public native boolean empty();
-    public native Face[] findFaces(byte[] data, int length);
+    public native Face[] findFaces(byte[] data, int length, int orientation, boolean fixed);
 }
