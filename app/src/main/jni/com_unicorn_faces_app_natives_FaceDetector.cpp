@@ -47,6 +47,10 @@ JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_f
 (JNIEnv *env, jobject obj, jbyteArray data, jint length, jint degree, jboolean fixed) {
     if (detector.empty()) return NULL;
 
+    jclass thisClass = env->FindClass("com/unicorn/faces/app/natives/FaceDetector");
+    jfieldID orientation = env->GetFieldID(thisClass, "orientation", "I");
+    env->SetIntField(obj, orientation, degree);
+
     jbyte* _data = env->GetByteArrayElements(data, 0);
     std::vector<unsigned char> vec_obj;
     for ( unsigned int i = 0; i < length; i++ ) vec_obj.push_back(_data[i]);

@@ -1,6 +1,8 @@
 package com.unicorn.faces.app.natives;
 
 import android.graphics.*;
+import android.graphics.drawable.BitmapDrawable;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,6 +23,7 @@ public class FaceDetector {
         public int height;
     }
 
+    private int orientation; // set by native code
     private static FaceDetector instance;
 
     private FaceDetector() { /* null */ }
@@ -38,10 +41,10 @@ public class FaceDetector {
      * Save Image with faces found on it.
      * @param imgFile: The File object using for saving image.
      */
-    public Face[] saveImage(File imgFile, byte[] data, int length, int orientation, boolean fixed)
+    public Face[] saveImage(File imgFile, byte[] data, int length, boolean fixed)
             throws FileNotFoundException, RuntimeException {
         Face[] faces = findFaces(data, length, orientation, fixed);
-        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, length);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, length).copy(Bitmap.Config.ARGB_8888, true);
         Canvas canvas = new Canvas(bitmap);
         Paint paint = new Paint();
         paint.setColor(0xff00b4ff);

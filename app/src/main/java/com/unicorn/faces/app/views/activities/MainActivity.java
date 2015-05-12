@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import com.unicorn.faces.app.R;
+import com.unicorn.faces.app.natives.FaceDetector;
 import com.unicorn.faces.app.views.CameraPreview;
 import com.unicorn.faces.app.views.FaceMask;
 
@@ -41,9 +42,10 @@ public class MainActivity extends Activity {
             }
 
             try {
-                FileOutputStream fos = new FileOutputStream(pictureFile);
-                fos.write(data);
-                fos.close();
+//                FileOutputStream fos = new FileOutputStream(pictureFile);
+//                fos.write(data);
+//                fos.close();
+                FaceDetector.getSingleton().saveImage(pictureFile, data, data.length, true);
             } catch (FileNotFoundException e) {
                 Log.d(TAG, "File not found: " + e.getMessage());
             } catch (IOException e) {
