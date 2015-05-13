@@ -67,7 +67,11 @@ JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_f
     }
 
     std::vector<cv::Rect> faceVector;
-    detector.detectMultiScale(mat, faceVector, 1.2, 3, 0, cv::Size(25, 25));
+    for (int beta = 0; beta <= 180; beta += 60) {
+        detector.detectMultiScale(mat, faceVector, 1.2, 3, 0, cv::Size(36, 36));
+        if (faceVector.size()) break;
+        mat.convertTo(mat, 0, 1, beta);
+    }
     
     env->ReleaseByteArrayElements(data, _data, JNI_ABORT);
 
