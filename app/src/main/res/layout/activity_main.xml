@@ -10,22 +10,42 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-    <LinearLayout
+    <!--<LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:background="#000">
         <Button android:id="@+id/button_cameraSwitch"
-                android:text="@string/camera_switch"
-                android:layout_width="0dp"
+                android:background="@drawable/cameraswitch"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_gravity="center" />
         <Button
                 android:id="@+id/button_capture"
-                android:text="@string/capture"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:background="@drawable/capture_button_sel"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
                 android:layout_gravity="center" />
-    </LinearLayout>
+    </LinearLayout>-->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#000">
+        <Button android:id="@+id/button_cameraSwitch"
+            android:background="@drawable/cameraswitch"
+            android:layout_width="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="15dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+        <Button
+            android:id="@+id/button_capture"
+            android:background="@drawable/capture_button_sel"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_centerHorizontal="true"
+            />
+    </RelativeLayout>
 </LinearLayout>

@@ -121,6 +121,45 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
     }
 
+    //swicth the direction of the camera
+    public void setCameraFaceDirection(int index){
+        if(mCamera!=null){
+            mCamera.stopPreview();
+            mCamera.setPreviewCallback(null);
+            mCamera.release();
+            mCamera = null;
+        }
+        try {
+            mCamera = Camera.open(index);
+            mCamera.setPreviewDisplay(mHolder);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+        Camera.Parameters params = mCamera.getParameters();
+        params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+        Camera.getCameraInfo(index, mCameraInfo);
+        mCamera.setParameters(params);
+
+        int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0: degrees = 0; break;
+            case Surface.ROTATION_90: degrees = 90; break;
+            case Surface.ROTATION_180: degrees = 180; break;
+            case Surface.ROTATION_270: degrees = 270; break;
+        }
+        if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            degrees = (mCameraInfo.orientation + degrees) % 360;
+            degrees = (360 - degrees) % 360;  // compensate the mirror
+        } else {  // back-facing
+            degrees = (mCameraInfo.orientation - degrees + 360) % 360;
+        }
+        mCamera.setDisplayOrientation(degrees);
+
+        mCamera.startPreview();
+
+    }
+
     private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
         final double ASPECT_TOLERANCE = 0.1;
         double targetRatio=(double)h / w;
