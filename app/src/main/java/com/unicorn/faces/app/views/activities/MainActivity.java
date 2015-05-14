@@ -9,6 +9,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import com.unicorn.faces.app.R;
@@ -29,6 +31,15 @@ public class MainActivity extends Activity {
 
     private CameraPreview mPreview;
     private FaceMask mFaceMask;
+
+    //count times of camera switch
+    private int cameraSwitchTimes=-1;
+
+    //camera switch animation
+    private Animation mScaleInAnimation;
+    private Animation mScaleOutAnimation;
+
+    private FrameLayout preview;
 
     private PictureCallback mPicture = new PictureCallback() {
 
@@ -79,9 +90,28 @@ public class MainActivity extends Activity {
         mFaceMask = new FaceMask(this);
         mPreview = new CameraPreview(this, mFaceMask);
 
-        FrameLayout preview = (FrameLayout)findViewById(R.id.camera_preview);
+        preview = (FrameLayout)findViewById(R.id.camera_preview);
         preview.addView(mPreview);
         preview.addView(mFaceMask);
+
+        mScaleInAnimation= AnimationUtils.loadAnimation(this, R.anim.scale_in);
+        mScaleInAnimation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                mPreview.startAnimation(mScaleOutAnimation);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        mScaleOutAnimation= AnimationUtils.loadAnimation(this,R.anim.scale_out);
 
         Button captureButton = (Button) findViewById(R.id.button_capture);
         Button cameraSwitchButton = (Button) findViewById(R.id.button_cameraSwitch);
@@ -97,6 +127,11 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 // TODO
+                cameraSwitchTimes++;
+                preview.startAnimation(mScaleInAnimation);
+
+                //switch camera
+                mPreview.setCameraFaceDirection(cameraSwitchTimes % 2);
             }
         });
     }
