@@ -80,23 +80,26 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        try {
-            Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-            int cameraIdx = 0;
-            for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-                Camera.getCameraInfo(i, cameraInfo);
-                Log.d("libfaces", String.format("Camera[%d]{orientation = %d}", i, cameraInfo.orientation));
-                if (Camera.CameraInfo.CAMERA_FACING_FRONT == cameraInfo.facing) cameraIdx = i;
-            }
+        setCameraFaceDirection(1);
+    }
 
-            mCamera = Camera.open(cameraIdx);
-            mCamera.setPreviewDisplay(surfaceHolder);
+    // Swicth the direction of the camera.
+    public void setCameraFaceDirection(int index){
+        if(mCamera != null){
+            mCamera.stopPreview();
+            mCamera.setPreviewCallback(null);
+            mCamera.release();
+            mCamera = null;
+        }
+        try {
+            mCamera = Camera.open(index);
+            mCamera.setPreviewDisplay(mHolder);
+            mCamera.setPreviewCallback(this);
 
             Camera.Parameters params = mCamera.getParameters();
             params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-            Camera.getCameraInfo(cameraIdx, mCameraInfo);
+            Camera.getCameraInfo(index, mCameraInfo);
             mCamera.setParameters(params);
-
             int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
             int degrees = 0;
             switch (rotation) {
@@ -114,55 +117,14 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             mCamera.setDisplayOrientation(degrees);
 
             mCamera.startPreview();
-        } catch (IOException e) {
-            Log.d(TAG, "Error setting camera preview: " + e.getMessage());
-            mCamera.release();
-            mCamera = null;
-        }
-    }
-
-    //swicth the direction of the camera
-    public void setCameraFaceDirection(int index){
-        if(mCamera!=null){
-            mCamera.stopPreview();
-            mCamera.setPreviewCallback(null);
-            mCamera.release();
-            mCamera = null;
-        }
-        try {
-            mCamera = Camera.open(index);
-            mCamera.setPreviewDisplay(mHolder);
         } catch (IOException e1) {
             e1.printStackTrace();
         }
-        Camera.Parameters params = mCamera.getParameters();
-        params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-        Camera.getCameraInfo(index, mCameraInfo);
-        mCamera.setParameters(params);
-
-        int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
-        int degrees = 0;
-        switch (rotation) {
-            case Surface.ROTATION_0: degrees = 0; break;
-            case Surface.ROTATION_90: degrees = 90; break;
-            case Surface.ROTATION_180: degrees = 180; break;
-            case Surface.ROTATION_270: degrees = 270; break;
-        }
-        if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            degrees = (mCameraInfo.orientation + degrees) % 360;
-            degrees = (360 - degrees) % 360;  // compensate the mirror
-        } else {  // back-facing
-            degrees = (mCameraInfo.orientation - degrees + 360) % 360;
-        }
-        mCamera.setDisplayOrientation(degrees);
-
-        mCamera.startPreview();
-
     }
 
     private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
         final double ASPECT_TOLERANCE = 0.1;
-        double targetRatio=(double)h / w;
+        double targetRatio = (double) h / w;
 
         if (sizes == null) return null;
 
@@ -254,11 +216,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                             throw new RuntimeException("Can't convert YUV to JPEG.");
                         }
                         byte[] bytes = baos.toByteArray();
-//                        Following are debugging settings.
-//                        File file = MainActivity.getCapturedImageFile();
-//                        FileOutputStream fos = new FileOutputStream(file);
-//                        fos.write(bytes);
-//                        fos.close();
 
                         return mDetector.findFaces(bytes, bytes.length, mCameraInfo.orientation, false);
                     }
