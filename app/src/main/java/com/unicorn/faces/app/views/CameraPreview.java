@@ -39,8 +39,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private FaceMask mFaceMask;
 
     private FaceDetector mDetector;
-
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    
     private FutureTask<FaceDetector.Face[]> mDetectFuture;
     private Long lastDetectTime;
 
@@ -221,7 +220,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                     }
                 });
 
-                executor.execute(mDetectFuture);
+                mDetector.submit(mDetectFuture);
             } else if (mDetectFuture.isDone()) {
                 mFaceMask.setFaceInfo(mDetectFuture.get());
                 mDetectFuture = null;

@@ -71,7 +71,11 @@ public class FaceDetector {
                 return faces;
             }
         });
-        executor.submit(futureTask);
+        submit(futureTask);
         return futureTask;
+    }
+
+    public void submit(FutureTask<Face[]> task) {
+        executor.submit(task);
     }
 }
