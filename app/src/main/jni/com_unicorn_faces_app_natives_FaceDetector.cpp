@@ -60,8 +60,8 @@ JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_f
     // Rotate image by degree
     switch (degree) {
         case 0: mat = mid; break;
-        case 90: cv::transpose(mid, mat); break;
-        case 180: cv::flip(mid, mat, 0); break;
+        case 90: cv::transpose(mid, mat); cv::flip(mat, mat, 1); break;
+        case 180: cv::flip(mid, mat, -1); break;
         case 270: cv::transpose(mid, mat); cv::flip(mat, mat, 0); break;
         default: return NULL;
     }
