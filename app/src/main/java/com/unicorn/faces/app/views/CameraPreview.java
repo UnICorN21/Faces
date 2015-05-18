@@ -1,10 +1,12 @@
 package com.unicorn.faces.app.views;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.*;
 import android.hardware.Camera;
 import android.os.Environment;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Toast;
@@ -58,23 +60,48 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mFaceDetecter.init(context, API_KEY);
     }
 
-    @Override
-    public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        try {
-            Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-            int cameraIdx = 0;
-            Camera.getCameraInfo(cameraIdx, mCameraInfo);
-            mCamera = Camera.open(cameraIdx);
-            mCamera.setPreviewDisplay(surfaceHolder);
-            Camera.Parameters params = mCamera.getParameters();
-            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-            mCamera.setParameters(params);
-            mCamera.startPreview();
-        } catch (IOException e) {
-            Log.d(TAG, "Error setting camera preview: " + e.getMessage());
+    // Swicth the direction of the camera.
+    public void setCameraFaceDirection(int index){
+        if(mCamera != null){
+            mCamera.stopPreview();
+            mCamera.setPreviewCallback(null);
             mCamera.release();
             mCamera = null;
         }
+        try {
+            mCamera = Camera.open(index);
+            mCamera.setPreviewDisplay(mHolder);
+            mCamera.setPreviewCallback(this);
+
+            Camera.Parameters params = mCamera.getParameters();
+            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            Camera.getCameraInfo(index, mCameraInfo);
+            mCamera.setParameters(params);
+            int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
+            int degrees = 0;
+            switch (rotation) {
+                case Surface.ROTATION_0: degrees = 0; break;
+                case Surface.ROTATION_90: degrees = 90; break;
+                case Surface.ROTATION_180: degrees = 180; break;
+                case Surface.ROTATION_270: degrees = 270; break;
+            }
+            if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                degrees = (mCameraInfo.orientation + degrees) % 360;
+                degrees = (360 - degrees) % 360;  // compensate the mirror
+            } else {  // back-facing
+                degrees = (mCameraInfo.orientation - degrees + 360) % 360;
+            }
+            mCamera.setDisplayOrientation(degrees);
+
+            mCamera.startPreview();
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+        setCameraFaceDirection(1);
     }
 
     @Override
@@ -116,6 +143,16 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         Toast.makeText(getContext(), "Captured", Toast.LENGTH_LONG).show();
     }
 
+    public FaceDetecter.Face[] findFaces(Bitmap bitmap) {
+        return mFaceDetecter.findFaces(bitmap);
+    }
+
+    public Bitmap rotateBitmap(Bitmap bitmap) {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(mCameraInfo.orientation);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+    }
+
     @Override
     public void onPreviewFrame(final byte[] data, Camera camera) {
         try {
@@ -132,14 +169,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                             throw new RuntimeException("Cannot cast camera preview to jpeg.");
                         }
                         Bitmap bitmap = BitmapFactory.decodeByteArray(os.toByteArray(), 0, os.toByteArray().length);
-
-                        Matrix matrix = new Matrix();
-                        matrix.postRotate(mCameraInfo.orientation);
-                        Bitmap procImage = Bitmap.createBitmap(bitmap, 0, 0,
-                                bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-
-                        FaceDetecter.Face[] faces = mFaceDetecter.findFaces(procImage);
-
+                        Bitmap procImage = rotateBitmap(bitmap);
+                        FaceDetecter.Face[] faces = findFaces(procImage);
                         bitmap.recycle();
                         procImage.recycle();
                         return faces;

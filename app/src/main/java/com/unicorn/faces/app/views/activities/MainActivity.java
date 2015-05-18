@@ -1,6 +1,7 @@
 package com.unicorn.faces.app.views.activities;
 
 import android.app.Activity;
+import android.graphics.*;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.os.Bundle;
@@ -9,8 +10,11 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import com.faceplusplus.api.FaceDetecter;
 import com.unicorn.faces.app.R;
 import com.unicorn.faces.app.views.CameraPreview;
 import com.unicorn.faces.app.views.FaceMask;
@@ -29,6 +33,15 @@ public class MainActivity extends Activity {
     private CameraPreview mPreview;
     private FaceMask mFaceMask;
 
+    //count times of camera switch
+    private int cameraSwitchTimes=-1;
+
+    //camera switch animation
+    private Animation mScaleInAnimation;
+    private Animation mScaleOutAnimation;
+
+    private FrameLayout preview;
+
     private PictureCallback mPicture = new PictureCallback() {
 
         @Override
@@ -41,9 +54,28 @@ public class MainActivity extends Activity {
             }
 
             try {
+                Bitmap bitmap = mPreview.rotateBitmap(BitmapFactory.decodeByteArray(data, 0, data.length))
+                        .copy(Bitmap.Config.ARGB_8888, true);
+                FaceDetecter.Face[] faces = mPreview.findFaces(bitmap);
+                Canvas canvas = new Canvas(bitmap);
+                Paint paint = new Paint();
+                paint.setColor(0xff00b4ff);
+                paint.setStrokeWidth(3);
+                paint.setStyle(Paint.Style.STROKE);
+                for (FaceDetecter.Face face: faces) {
+                    RectF rect = new RectF();
+                    rect.set(bitmap.getWidth() * face.left, bitmap.getHeight()
+                                    * face.top, bitmap.getWidth() * face.right, bitmap.getHeight() * face.bottom);
+                    canvas.drawRect(rect, paint);
+                }
+                canvas.save(Canvas.ALL_SAVE_FLAG);
+                canvas.restore();
                 FileOutputStream fos = new FileOutputStream(pictureFile);
-                fos.write(data);
+                if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)) {
+                    throw new RuntimeException("Save image file failed.");
+                }
                 fos.close();
+                bitmap.recycle();
             } catch (FileNotFoundException e) {
                 Log.d(TAG, "File not found: " + e.getMessage());
             } catch (IOException e) {
@@ -77,11 +109,31 @@ public class MainActivity extends Activity {
         mFaceMask = new FaceMask(this);
         mPreview = new CameraPreview(this, mFaceMask);
 
-        FrameLayout preview = (FrameLayout)findViewById(R.id.camera_preview);
+        preview = (FrameLayout)findViewById(R.id.camera_preview);
         preview.addView(mPreview);
         preview.addView(mFaceMask);
 
+        mScaleInAnimation= AnimationUtils.loadAnimation(this, R.anim.scale_in);
+        mScaleInAnimation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                mPreview.startAnimation(mScaleOutAnimation);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+        mScaleOutAnimation = AnimationUtils.loadAnimation(this, R.anim.scale_out);
+
         Button captureButton = (Button) findViewById(R.id.button_capture);
+        Button cameraSwitchButton = (Button) findViewById(R.id.button_cameraSwitch);
         captureButton.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
@@ -90,6 +142,17 @@ public class MainActivity extends Activity {
                     }
                 }
         );
+        cameraSwitchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // TODO
+                cameraSwitchTimes++;
+                preview.startAnimation(mScaleInAnimation);
+
+                //switch camera
+                mPreview.setCameraFaceDirection(cameraSwitchTimes % 2);
+            }
+        });
     }
 
 
