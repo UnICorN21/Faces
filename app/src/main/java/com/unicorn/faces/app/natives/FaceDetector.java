@@ -67,7 +67,7 @@ public class FaceDetector {
                 if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)) {
                     throw new RuntimeException("Save image file failed.");
                 }
-
+                bitmap.recycle();
                 return faces;
             }
         });

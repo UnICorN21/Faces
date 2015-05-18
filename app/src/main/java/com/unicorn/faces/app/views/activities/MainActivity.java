@@ -17,6 +17,7 @@ import com.unicorn.faces.app.R;
 import com.unicorn.faces.app.natives.FaceDetector;
 import com.unicorn.faces.app.views.CameraPreview;
 import com.unicorn.faces.app.views.FaceMask;
+import com.unicorn.faces.app.views.FocusView;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -31,6 +32,7 @@ public class MainActivity extends Activity {
 
     private CameraPreview mPreview;
     private FaceMask mFaceMask;
+    private FocusView mFocusView;
 
     //count times of camera switch
     private int cameraSwitchTimes=-1;
@@ -53,9 +55,6 @@ public class MainActivity extends Activity {
             }
 
             try {
-//                FileOutputStream fos = new FileOutputStream(pictureFile);
-//                fos.write(data);
-//                fos.close();
                 FaceDetector.getSingleton().saveImage(pictureFile, data, data.length, true);
             } catch (FileNotFoundException e) {
                 Log.d(TAG, "File not found: " + e.getMessage());
@@ -88,11 +87,14 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         mFaceMask = new FaceMask(this);
+        mFocusView = new FocusView(this);
         mPreview = new CameraPreview(this, mFaceMask);
+        mPreview.setFocusView(mFocusView);
 
         preview = (FrameLayout)findViewById(R.id.camera_preview);
         preview.addView(mPreview);
         preview.addView(mFaceMask);
+        preview.addView(mFocusView);
 
         mScaleInAnimation= AnimationUtils.loadAnimation(this, R.anim.scale_in);
         mScaleInAnimation.setAnimationListener(new Animation.AnimationListener() {
@@ -158,5 +160,4 @@ public class MainActivity extends Activity {
 
         return super.onOptionsItemSelected(item);
     }
-
 }
