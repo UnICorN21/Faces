@@ -13,6 +13,8 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 
 public class FocusView extends View {
+    private static final int LEN = 50;
+
     private boolean haveTouch = false;
     private Rect touchArea;
     private Paint paint;
@@ -34,7 +36,17 @@ public class FocusView extends View {
     @Override
     public void onDraw(Canvas canvas) {
         if(haveTouch){
-            canvas.drawRect(touchArea.left, touchArea.top, touchArea.right, touchArea.bottom, paint);
+            canvas.drawLine(touchArea.left, touchArea.top + LEN, touchArea.left, touchArea.top, paint);
+            canvas.drawLine(touchArea.left, touchArea.top, touchArea.left+LEN, touchArea.top, paint);
+
+            canvas.drawLine(touchArea.right, touchArea.top+LEN, touchArea.right, touchArea.top, paint);
+            canvas.drawLine(touchArea.right-LEN, touchArea.top, touchArea.right, touchArea.top, paint);
+
+            canvas.drawLine(touchArea.left, touchArea.bottom-LEN, touchArea.left, touchArea.bottom, paint);
+            canvas.drawLine(touchArea.left, touchArea.bottom, touchArea.left+LEN, touchArea.bottom, paint);
+
+            canvas.drawLine(touchArea.right, touchArea.bottom-LEN, touchArea.right, touchArea.bottom, paint);
+            canvas.drawLine(touchArea.right-LEN, touchArea.bottom, touchArea.right, touchArea.bottom, paint);
         }
     }
 
