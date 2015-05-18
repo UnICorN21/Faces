@@ -18,6 +18,7 @@ import com.faceplusplus.api.FaceDetecter;
 import com.unicorn.faces.app.R;
 import com.unicorn.faces.app.views.CameraPreview;
 import com.unicorn.faces.app.views.FaceMask;
+import com.unicorn.faces.app.views.FocusView;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,6 +33,7 @@ public class MainActivity extends Activity {
 
     private CameraPreview mPreview;
     private FaceMask mFaceMask;
+    private FocusView mFocusView;
 
     //count times of camera switch
     private int cameraSwitchTimes=-1;
@@ -57,19 +59,21 @@ public class MainActivity extends Activity {
                 Bitmap bitmap = mPreview.rotateBitmap(BitmapFactory.decodeByteArray(data, 0, data.length))
                         .copy(Bitmap.Config.ARGB_8888, true);
                 FaceDetecter.Face[] faces = mPreview.findFaces(bitmap);
-                Canvas canvas = new Canvas(bitmap);
-                Paint paint = new Paint();
-                paint.setColor(0xff00b4ff);
-                paint.setStrokeWidth(3);
-                paint.setStyle(Paint.Style.STROKE);
-                for (FaceDetecter.Face face: faces) {
-                    RectF rect = new RectF();
-                    rect.set(bitmap.getWidth() * face.left, bitmap.getHeight()
-                                    * face.top, bitmap.getWidth() * face.right, bitmap.getHeight() * face.bottom);
-                    canvas.drawRect(rect, paint);
+                if (null != faces) {
+                    Canvas canvas = new Canvas(bitmap);
+                    Paint paint = new Paint();
+                    paint.setColor(0xff00b4ff);
+                    paint.setStrokeWidth(3);
+                    paint.setStyle(Paint.Style.STROKE);
+                    for (FaceDetecter.Face face: faces) {
+                        RectF rect = new RectF();
+                        rect.set(bitmap.getWidth() * face.left, bitmap.getHeight()
+                                * face.top, bitmap.getWidth() * face.right, bitmap.getHeight() * face.bottom);
+                        canvas.drawRect(rect, paint);
+                    }
+                    canvas.save(Canvas.ALL_SAVE_FLAG);
+                    canvas.restore();
                 }
-                canvas.save(Canvas.ALL_SAVE_FLAG);
-                canvas.restore();
                 FileOutputStream fos = new FileOutputStream(pictureFile);
                 if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)) {
                     throw new RuntimeException("Save image file failed.");
@@ -107,11 +111,13 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         mFaceMask = new FaceMask(this);
+        mFocusView = new FocusView(this);
         mPreview = new CameraPreview(this, mFaceMask);
 
         preview = (FrameLayout)findViewById(R.id.camera_preview);
         preview.addView(mPreview);
         preview.addView(mFaceMask);
+        preview.addView(mFocusView);
 
         mScaleInAnimation= AnimationUtils.loadAnimation(this, R.anim.scale_in);
         mScaleInAnimation.setAnimationListener(new Animation.AnimationListener() {
