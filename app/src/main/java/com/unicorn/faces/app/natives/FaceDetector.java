@@ -1,17 +1,14 @@
 package com.unicorn.faces.app.natives;
 
-import android.content.Context;
 import android.graphics.*;
-import android.graphics.drawable.BitmapDrawable;
-import android.os.AsyncTask;
-import android.util.Log;
-
-import com.unicorn.faces.app.views.activities.MainActivity;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 /**
  * Created by Huxley on 5/9/15.
