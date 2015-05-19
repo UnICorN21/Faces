@@ -88,7 +88,6 @@ public class Util {
                 height, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(output);
 
-        final int color = 0xff424242;
         final Paint paint = new Paint();
         final Rect src = new Rect((int)left, 0, (int)right, (int)bottom);
         final Rect dst = new Rect(0, 0, (int)dst_right, (int)dst_bottom);
@@ -97,7 +96,6 @@ public class Util {
         paint.setAntiAlias(true);
 
         canvas.drawARGB(0, 0, 0, 0);
-        paint.setColor(color);
         canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
 
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
