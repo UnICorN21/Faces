@@ -1,20 +1,17 @@
 package com.unicorn.faces.app.views;
 
-import android.graphics.Color;
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.view.View;
 
 /**
  * Created by Huxley on 5/18/15.
  */
 
-import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Rect;
-import android.util.AttributeSet;
-
 public class FocusView extends View {
-    private static int LEN = 60;
+    private static final int LEN = 50;
 
     private boolean haveTouch = false;
     private Rect touchArea;

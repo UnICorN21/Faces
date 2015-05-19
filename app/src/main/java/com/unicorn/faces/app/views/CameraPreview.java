@@ -64,7 +64,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             @Override
             public void onOrientationChanged(int orientation) {
                 orientation = (int)Math.round(orientation / 90.0) * 90;
-                Log.d("faceori", String.format("Orientation := %d", orientation));
                 if (orientation > 180) orientation = 360 - orientation;
                 detectOrientation = (cameraOrientation - orientation + 360) % 360;
                 Log.d("faceori", String.format("Current Detect Orientation := %d", detectOrientation));
