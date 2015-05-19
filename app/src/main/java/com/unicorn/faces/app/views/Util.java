@@ -39,8 +39,10 @@ public class Util {
         float scaleWidth=goalWidth/oriWidth;
         float scaleHeight=goalHeight/oriHeight;
 
+        float  scaleDegree=(scaleWidth>=scaleHeight)?scaleWidth:scaleHeight;
+
         Matrix scaleMatrix=new Matrix();
-        scaleMatrix.postScale(scaleWidth,scaleHeight);
+        scaleMatrix.postScale(scaleDegree,scaleDegree);
 
         Bitmap goalBitmap=Bitmap.createBitmap(bitmap,0,0,oriWidth,oriHeight,scaleMatrix,true);
 
