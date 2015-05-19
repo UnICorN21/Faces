@@ -47,5 +47,14 @@
             android:layout_height="100dp"
             android:layout_centerHorizontal="true"
             />
+        <ImageButton
+            android:id="@+id/button_showImg"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="15dp"
+            android:layout_centerVertical="true"
+            android:textAllCaps="false"
+            android:background="@drawable/button_shape"/>
     </RelativeLayout>
 </LinearLayout>

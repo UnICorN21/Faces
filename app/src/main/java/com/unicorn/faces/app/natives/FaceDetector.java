@@ -1,9 +1,12 @@
 package com.unicorn.faces.app.natives;
 
+import android.content.Context;
 import android.graphics.*;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.AsyncTask;
 import android.util.Log;
+
+import com.unicorn.faces.app.views.activities.MainActivity;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,6 +33,7 @@ public class FaceDetector {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private FaceDetector() { /* null */ }
+
 
     public static FaceDetector getSingleton() {
         if (null == instance) instance = new FaceDetector();

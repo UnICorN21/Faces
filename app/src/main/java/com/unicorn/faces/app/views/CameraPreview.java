@@ -2,7 +2,9 @@ package com.unicorn.faces.app.views;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.*;
+import android.graphics.ImageFormat;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.os.Handler;
 import android.util.Log;
@@ -32,12 +34,14 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     private boolean focusViewSet = false;
     private FocusView focusView;
-
     private FaceMask mFaceMask;
+
     private FaceDetector mDetector;
     private int detectOrientation = 0;
     private FutureTask<FaceDetector.Face[]> mDetectFuture;
     private Long lastDetectTime;
+
+    private int pictureWidth,pictureHeight;
 
     private OrientationEventListener mOrientationEventListener;
 
@@ -113,6 +117,12 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             mCamera.setPreviewDisplay(mHolder);
             mCamera.setPreviewCallback(this);
 
+            Camera.Parameters params = mCamera.getParameters();
+
+            if(pictureWidth!=0&&pictureHeight!=0) {
+                params.setPictureSize(pictureWidth, pictureHeight);
+            }
+            mCamera.setParameters(params);
             Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
             Camera.getCameraInfo(index, cameraInfo);
             int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
@@ -179,11 +189,15 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             // Ignored.
         }
 
+
         Camera.Parameters params = mCamera.getParameters();
         List<Camera.Size> sizes = params.getSupportedPreviewSizes();
         Camera.Size optSize = getOptimalPreviewSize(sizes, h, w);
         params.setPreviewSize(optSize.width, optSize.height);
-
+        pictureWidth=optSize.width;
+        pictureHeight=optSize.height;
+        params.setPreviewSize(pictureWidth,  pictureHeight);
+        params.setPictureSize(pictureWidth,  pictureHeight);
         if (params.getMaxNumFocusAreas() > 0) {
             ArrayList<Camera.Area> focusAreas = new ArrayList<Camera.Area>(1);
             focusAreas.add(new Camera.Area(new Rect(-1000, -1000, 1000, 0), 750));
@@ -250,7 +264,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             }
 
         } catch (Exception e) {
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
             // Ignored, the camera may be released.
         }
     }
@@ -318,9 +332,5 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public void setFocusView(FocusView fView) {
         focusView = fView;
         focusViewSet = true;
-    }
-
-    public void setDetectOrientation(int orientation) {
-
     }
 }

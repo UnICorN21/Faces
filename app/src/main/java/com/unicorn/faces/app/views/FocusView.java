@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.Color;
 import android.view.View;
 
 /**
@@ -12,7 +13,6 @@ import android.view.View;
 
 public class FocusView extends View {
     private static final int LEN = 50;
-
     private boolean haveTouch = false;
     private Rect touchArea;
     private Paint paint;
