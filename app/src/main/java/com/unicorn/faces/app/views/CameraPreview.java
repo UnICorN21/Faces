@@ -120,6 +120,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             Camera.Parameters params = mCamera.getParameters();
             if(pictureWidth != 0 && pictureHeight != 0) params.setPictureSize(pictureWidth, pictureHeight);
             if (params.getMaxNumFocusAreas() == 0 && focusViewSet) focusViewSet = false;
+            else if (params.getMaxNumFocusAreas() > 0 && null != focusView) focusViewSet = true;
             mCamera.setParameters(params);
 
             Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
