@@ -1,5 +1,6 @@
 package com.unicorn.faces.app.views.activities;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -99,6 +100,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ActionBar actionBar = getActionBar();
+        if (null != actionBar) actionBar.hide();
 
         mFaceMask = new FaceMask(this);
         mFocusView = new FocusView(this);
