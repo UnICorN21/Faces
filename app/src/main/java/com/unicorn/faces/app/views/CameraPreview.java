@@ -6,7 +6,10 @@ import android.graphics.*;
 import android.hardware.Camera;
 import android.nfc.Tag;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.Log;
+import android.view.MotionEvent;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -17,6 +20,7 @@ import com.unicorn.faces.app.views.activities.MainActivity;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -35,24 +39,51 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private Context mContext;
     private SurfaceHolder mHolder;
     private Camera mCamera;
-    private Camera.CameraInfo mCameraInfo;
+    private int cameraOrientation;
+
+    private boolean focusViewSet = false;
+    private FocusView focusView;
+
     private FaceMask mFaceMask;
 
     private FaceDetector mDetector;
 
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private int detectOrientation = 0;
+
     private FutureTask<FaceDetector.Face[]> mDetectFuture;
     private Long lastDetectTime;
+
+    private int pictureWidth,pictureHeight;
+
+    private OrientationEventListener mOrientationEventListener;
+
+    Camera.AutoFocusCallback autoFocusCallback = new Camera.AutoFocusCallback(){
+
+        @Override
+        public void onAutoFocus(boolean arg0, Camera arg1) {
+            if (arg0){
+                mCamera.cancelAutoFocus();
+            }
+        }
+    };
 
     public CameraPreview(Context context, FaceMask faceMask) {
         super(context);
         mContext = context;
         mFaceMask = faceMask;
-        mCameraInfo = new Camera.CameraInfo();
 
         mHolder = getHolder();
         mHolder.addCallback(this);
         mHolder.setKeepScreenOn(true);
+
+        mOrientationEventListener = new OrientationEventListener(mContext) {
+            @Override
+            public void onOrientationChanged(int orientation) {
+                orientation = (int)Math.round(orientation / 90.0) * 90;
+                detectOrientation = (cameraOrientation - orientation + 360) % 360;
+                Log.d("faceori", String.format("Current Detect Orientation := %d", detectOrientation));
+            }
+        };
 
         mDetector = FaceDetector.getSingleton();
         if (mDetector.empty()) {
@@ -80,50 +111,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        try {
-            Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-            int cameraIdx = 0;
-            for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-                Camera.getCameraInfo(i, cameraInfo);
-                Log.d("libfaces", String.format("Camera[%d]{orientation = %d}", i, cameraInfo.orientation));
-                if (Camera.CameraInfo.CAMERA_FACING_FRONT == cameraInfo.facing) cameraIdx = i;
-            }
-
-            mCamera = Camera.open(cameraIdx);
-            mCamera.setPreviewDisplay(surfaceHolder);
-
-            Camera.Parameters params = mCamera.getParameters();
-            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-            Camera.getCameraInfo(cameraIdx, mCameraInfo);
-            mCamera.setParameters(params);
-
-            int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
-            int degrees = 0;
-            switch (rotation) {
-                case Surface.ROTATION_0: degrees = 0; break;
-                case Surface.ROTATION_90: degrees = 90; break;
-                case Surface.ROTATION_180: degrees = 180; break;
-                case Surface.ROTATION_270: degrees = 270; break;
-            }
-            if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                degrees = (mCameraInfo.orientation + degrees) % 360;
-                degrees = (360 - degrees) % 360;  // compensate the mirror
-            } else {  // back-facing
-                degrees = (mCameraInfo.orientation - degrees + 360) % 360;
-            }
-            mCamera.setDisplayOrientation(degrees);
-
-            mCamera.startPreview();
-        } catch (IOException e) {
-            Log.d(TAG, "Error setting camera preview: " + e.getMessage());
-            mCamera.release();
-            mCamera = null;
-        }
+        setCameraFaceDirection(1);
+        mOrientationEventListener.enable();
     }
 
-    //swicth the direction of the camera
+    // Swicth the direction of the camera.
     public void setCameraFaceDirection(int index){
-        if(mCamera!=null){
+        if(mCamera != null){
             mCamera.stopPreview();
             mCamera.setPreviewCallback(null);
             mCamera.release();
@@ -132,37 +126,43 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         try {
             mCamera = Camera.open(index);
             mCamera.setPreviewDisplay(mHolder);
+            mCamera.setPreviewCallback(this);
+
+            Camera.Parameters params = mCamera.getParameters();
+
+            if(pictureWidth!=0&&pictureHeight!=0) {
+                params.setPictureSize(pictureWidth, pictureHeight);
+            }
+            mCamera.setParameters(params);
+
+            Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+            Camera.getCameraInfo(index, cameraInfo);
+            int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
+            int degrees = 0;
+            switch (rotation) {
+                case Surface.ROTATION_0: degrees = 0; break;
+                case Surface.ROTATION_90: degrees = 90; break;
+                case Surface.ROTATION_180: degrees = 180; break;
+                case Surface.ROTATION_270: degrees = 270; break;
+            }
+            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+                degrees = (cameraInfo.orientation + degrees) % 360;
+                degrees = (360 - degrees) % 360;  // compensate the mirror
+            } else {  // back-facing
+                degrees = (cameraInfo.orientation - degrees + 360) % 360;
+            }
+            cameraOrientation = cameraInfo.orientation;
+            mCamera.setDisplayOrientation(degrees);
+
+            mCamera.startPreview();
         } catch (IOException e1) {
             e1.printStackTrace();
         }
-        Camera.Parameters params = mCamera.getParameters();
-        params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-        Camera.getCameraInfo(index, mCameraInfo);
-        mCamera.setParameters(params);
-
-        int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
-        int degrees = 0;
-        switch (rotation) {
-            case Surface.ROTATION_0: degrees = 0; break;
-            case Surface.ROTATION_90: degrees = 90; break;
-            case Surface.ROTATION_180: degrees = 180; break;
-            case Surface.ROTATION_270: degrees = 270; break;
-        }
-        if (mCameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            degrees = (mCameraInfo.orientation + degrees) % 360;
-            degrees = (360 - degrees) % 360;  // compensate the mirror
-        } else {  // back-facing
-            degrees = (mCameraInfo.orientation - degrees + 360) % 360;
-        }
-        mCamera.setDisplayOrientation(degrees);
-
-        mCamera.startPreview();
-
     }
 
     private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
         final double ASPECT_TOLERANCE = 0.1;
-        double targetRatio=(double)h / w;
+        double targetRatio = (double) h / w;
 
         if (sizes == null) return null;
 
@@ -201,15 +201,23 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             // Ignored.
         }
 
+
         Camera.Parameters params = mCamera.getParameters();
         List<Camera.Size> sizes = params.getSupportedPreviewSizes();
         Camera.Size optSize = getOptimalPreviewSize(sizes, h, w);
-        params.setPreviewSize(optSize.width, optSize.height);
+        pictureWidth=optSize.width;
+        pictureHeight=optSize.height;
+        params.setPreviewSize(pictureWidth,  pictureHeight);
+        params.setPictureSize(pictureWidth,  pictureHeight);
+
+        if (params.getMaxNumFocusAreas() > 0) {
+            ArrayList<Camera.Area> focusAreas = new ArrayList<Camera.Area>(1);
+            focusAreas.add(new Camera.Area(new Rect(-1000, -1000, 1000, 0), 750));
+            params.setFocusAreas(focusAreas);
+        }
+
         mCamera.setParameters(params);
         mCamera.setPreviewCallback(this);
-
-        params = mCamera.getParameters();
-        Log.d("libfaces", params.getPreviewSize().toString());
 
         // start preview with new settings
         try {
@@ -224,6 +232,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         try {
+            mOrientationEventListener.disable();
+            if (mDetectFuture != null && !mDetectFuture.isDone()) mDetectFuture.cancel(true);
             mCamera.stopPreview();
             mCamera.setPreviewCallback(null);
             mCamera.release();
@@ -254,25 +264,88 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
                             throw new RuntimeException("Can't convert YUV to JPEG.");
                         }
                         byte[] bytes = baos.toByteArray();
-//                        Following are debugging settings.
-//                        File file = MainActivity.getCapturedImageFile();
-//                        FileOutputStream fos = new FileOutputStream(file);
-//                        fos.write(bytes);
-//                        fos.close();
 
-                        return mDetector.findFaces(bytes, bytes.length, mCameraInfo.orientation, false);
+                        return mDetector.findFaces(bytes, bytes.length, detectOrientation, false);
                     }
                 });
 
-                executor.execute(mDetectFuture);
+                mDetector.submit(mDetectFuture);
             } else if (mDetectFuture.isDone()) {
                 mFaceMask.setFaceInfo(mDetectFuture.get());
                 mDetectFuture = null;
             }
 
         } catch (Exception e) {
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, ""+e.getMessage());
             // Ignored, the camera may be released.
         }
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if(event.getAction() == MotionEvent.ACTION_DOWN){
+            float x = event.getX();
+            float y = event.getY();
+
+            Rect touchRect = new Rect(
+                    (int)(x - 100),
+                    (int)(y - 100),
+                    (int)(x + 100),
+                    (int)(y + 100));
+
+            final Rect targetFocusRect = new Rect(
+                    touchRect.left * 2000/this.getWidth() - 1000,
+                    touchRect.top * 2000/this.getHeight() - 1000,
+                    touchRect.right * 2000/this.getWidth() - 1000,
+                    touchRect.bottom * 2000/this.getHeight() - 1000);
+
+            doTouchFocus(targetFocusRect);
+            if (focusViewSet) {
+                focusView.setHaveTouch(true, touchRect);
+                focusView.invalidate();
+
+                // Remove the square after some time
+                Handler handler = new Handler();
+                handler.postDelayed(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        focusView.setHaveTouch(false, new Rect(0, 0, 0, 0));
+                        focusView.invalidate();
+                    }
+                }, 1000);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Called from PreviewSurfaceView to set touch focus.
+     * @param - Rect - new area for auto focus
+     */
+    public void doTouchFocus(final Rect tfocusRect) {
+        try {
+            List<Camera.Area> focusList = new ArrayList<Camera.Area>();
+            Camera.Area focusArea = new Camera.Area(tfocusRect, 1000);
+            focusList.add(focusArea);
+
+            Camera.Parameters param = mCamera.getParameters();
+            param.setFocusAreas(focusList);
+            param.setMeteringAreas(focusList);
+            mCamera.setParameters(param);
+
+            mCamera.autoFocus(autoFocusCallback);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.i(TAG, "Unable to autofocus");
+        }
+    }
+
+    public void setFocusView(FocusView fView) {
+        focusView = fView;
+        focusViewSet = true;
+    }
+
+    public void setDetectOrientation(int orientation) {
     }
 }

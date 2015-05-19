@@ -1,12 +1,17 @@
 package com.unicorn.faces.app.natives;
 
+import android.content.Context;
 import android.graphics.*;
 import android.graphics.drawable.BitmapDrawable;
+import android.os.AsyncTask;
 import android.util.Log;
+
+import com.unicorn.faces.app.views.activities.MainActivity;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.util.concurrent.*;
 
 /**
  * Created by Huxley on 5/9/15.
@@ -25,8 +30,12 @@ public class FaceDetector {
 
     private int orientation; // set by native code
     private static FaceDetector instance;
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    public static int face_count=0;
 
     private FaceDetector() { /* null */ }
+
 
     public static FaceDetector getSingleton() {
         if (null == instance) instance = new FaceDetector();
@@ -41,27 +50,39 @@ public class FaceDetector {
      * Save Image with faces found on it.
      * @param imgFile: The File object using for saving image.
      */
-    public Face[] saveImage(File imgFile, byte[] data, int length, boolean fixed)
+    public FutureTask<Face[]> saveImage(final File imgFile, final byte[] data, final int length, final boolean fixed)
             throws FileNotFoundException, RuntimeException {
-        Face[] faces = findFaces(data, length, orientation, fixed);
-        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, length).copy(Bitmap.Config.ARGB_8888, true);
-        Canvas canvas = new Canvas(bitmap);
-        Paint paint = new Paint();
-        paint.setColor(0xff00b4ff);
-        paint.setStrokeWidth(3);
-        paint.setStyle(Paint.Style.STROKE);
-        for (Face face: faces) {
-            Rect rect = new Rect();
-            rect.set(face.x, face.y, face.x + face.width, face.y + face.height);
-            canvas.drawRect(rect, paint);
-        }
-        canvas.save(Canvas.ALL_SAVE_FLAG);
-        canvas.restore();
-        FileOutputStream fos = new FileOutputStream(imgFile);
-        if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)) {
-            throw new RuntimeException("Save image file failed.");
-        }
+        FutureTask<Face[]> futureTask = new FutureTask<Face[]>(new Callable<Face[]>() {
+            @Override
+            public Face[] call() throws Exception {
+                Face[] faces = findFaces(data, length, orientation, fixed);
+                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, length).copy(Bitmap.Config.ARGB_8888, true);
+                Canvas canvas = new Canvas(bitmap);
+                Paint paint = new Paint();
+                paint.setColor(0xff00b4ff);
+                paint.setStrokeWidth(3);
+                paint.setStyle(Paint.Style.STROKE);
+                for (Face face: faces) {
+                    Rect rect = new Rect();
+                    rect.set(face.x, face.y, face.x + face.width, face.y + face.height);
+                    canvas.drawRect(rect, paint);
+                    face_count++;
+                }
+                canvas.save(Canvas.ALL_SAVE_FLAG);
+                canvas.restore();
+                FileOutputStream fos = new FileOutputStream(imgFile);
+                if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)) {
+                    throw new RuntimeException("Save image file failed.");
+                }
+                bitmap.recycle();
+                return faces;
+            }
+        });
+        submit(futureTask);
+        return futureTask;
+    }
 
-        return faces;
+    public void submit(FutureTask<Face[]> task) {
+        executor.submit(task);
     }
 }
