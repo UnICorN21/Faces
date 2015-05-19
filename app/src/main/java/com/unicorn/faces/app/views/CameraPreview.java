@@ -118,11 +118,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             mCamera.setPreviewCallback(this);
 
             Camera.Parameters params = mCamera.getParameters();
-
-            if(pictureWidth!=0&&pictureHeight!=0) {
-                params.setPictureSize(pictureWidth, pictureHeight);
-            }
+            if(pictureWidth != 0 && pictureHeight != 0) params.setPictureSize(pictureWidth, pictureHeight);
+            if (params.getMaxNumFocusAreas() == 0 && focusViewSet) focusViewSet = false;
             mCamera.setParameters(params);
+
             Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
             Camera.getCameraInfo(index, cameraInfo);
             int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
