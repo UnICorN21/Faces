@@ -15,6 +15,7 @@ public class FaceMask extends View {
     Paint localPaint = null;
     FaceDetector.Face[] faces = null;
     RectF rect = null;
+    boolean portrait = true;
 
     public FaceMask(Context context) {
         super(context);
@@ -25,8 +26,7 @@ public class FaceMask extends View {
         localPaint.setStyle(Paint.Style.STROKE);
     }
 
-    public void setFaceInfo(FaceDetector.Face[] faceinfos)
-    {
+    public void setFaceInfo(FaceDetector.Face[] faceinfos) {
         this.faces = faceinfos;
         invalidate();
     }
@@ -36,8 +36,15 @@ public class FaceMask extends View {
         super.onDraw(canvas);
         if (faces == null)
             return;
+        int width = canvas.getWidth(), height = canvas.getHeight();
+        if (!portrait) {
+            width = width ^ height;
+            height = width ^ height;
+            width = width ^ height;
+        }
         for (FaceDetector.Face face : faces) {
-            rect.set(face.x, face.y, face.x + face.width, face.y + face.height);
+            rect.set(width * face.left, height * face.top,
+                    width * face.right, height * face.bottom);
             canvas.drawRect(rect, localPaint);
         }
     }

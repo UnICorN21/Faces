@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
@@ -108,7 +109,6 @@ public class MainActivity extends Activity {
         mFocusView = new FocusView(this);
         mPreview = new CameraPreview(this, mFaceMask);
         mPreview.setFocusView(mFocusView);
-
 
         preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);

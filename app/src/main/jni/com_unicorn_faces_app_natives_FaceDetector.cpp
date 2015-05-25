@@ -90,10 +90,10 @@ JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_f
     }
     
     jmethodID faceInit = env->GetMethodID(faceClass, "<init>", "(Lcom/unicorn/faces/app/natives/FaceDetector;)V");
-    jfieldID faceX = env->GetFieldID(faceClass, "x", "I");
-    jfieldID faceY = env->GetFieldID(faceClass, "y", "I");
-    jfieldID faceWidth = env->GetFieldID(faceClass, "width", "I");
-    jfieldID faceHeight = env->GetFieldID(faceClass, "height", "I");
+    jfieldID faceLeft = env->GetFieldID(faceClass, "left", "F");
+    jfieldID faceTop = env->GetFieldID(faceClass, "top", "F");
+    jfieldID faceRight = env->GetFieldID(faceClass, "right", "F");
+    jfieldID faceBottom = env->GetFieldID(faceClass, "bottom", "F");
     
     for (int i = 0; i < faceVector.size(); ++i) {
         jobject faceObj = env->NewObject(faceClass, faceInit, NULL);
@@ -124,10 +124,10 @@ JNIEXPORT jobjectArray JNICALL Java_com_unicorn_faces_app_natives_FaceDetector_f
         LOGD("Face[%d]{x=%d, y=%d, width=%d, height=%d}", i,
             faceVector[i].x, faceVector[i].y, faceVector[i].width, faceVector[i].height);
         
-        env->SetIntField(faceObj, faceX, faceVector[i].x);
-        env->SetIntField(faceObj, faceY, faceVector[i].y);
-        env->SetIntField(faceObj, faceWidth, faceVector[i].width);
-        env->SetIntField(faceObj, faceHeight, faceVector[i].height);
+        env->SetFloatField(faceObj, faceLeft, faceVector[i].x * 1.0 / mat.cols);
+        env->SetFloatField(faceObj, faceTop, faceVector[i].y * 1.0 / mat.rows);
+        env->SetFloatField(faceObj, faceRight, (faceVector[i].x + faceVector[i].width) * 1.0 / mat.cols);
+        env->SetFloatField(faceObj, faceBottom, (faceVector[i].y + faceVector[i].height) * 1.0 / mat.rows);
         env->SetObjectArrayElement(faces, i, faceObj);
     }
     

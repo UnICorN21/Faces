@@ -19,10 +19,10 @@ public class FaceDetector {
     }
 
     public class Face {
-        public int x;
-        public int y;
-        public int width;
-        public int height;
+        public float left;
+        public float top;
+        public float right;
+        public float bottom;
     }
 
     private int orientation; // set by native code
@@ -58,8 +58,9 @@ public class FaceDetector {
                 paint.setStrokeWidth(3);
                 paint.setStyle(Paint.Style.STROKE);
                 for (Face face: faces) {
-                    Rect rect = new Rect();
-                    rect.set(face.x, face.y, face.x + face.width, face.y + face.height);
+                    RectF rect = new RectF();
+                    rect.set(canvas.getWidth() * face.left, canvas.getHeight() * face.top,
+                            canvas.getWidth() * face.right, canvas.getHeight() * face.bottom);
                     canvas.drawRect(rect, paint);
                 }
                 canvas.save(Canvas.ALL_SAVE_FLAG);
