@@ -7,6 +7,7 @@ import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.*;
 import android.widget.Toast;
@@ -41,7 +42,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private FutureTask<FaceDetector.Face[]> mDetectFuture;
     private Long lastDetectTime;
 
-    private int pictureWidth,pictureHeight;
+    private int pictureWidth, pictureHeight;
 
     private OrientationEventListener mOrientationEventListener;
 
@@ -68,8 +69,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
             @Override
             public void onOrientationChanged(int orientation) {
                 orientation = (int)Math.round(orientation / 90.0) * 90;
-                if (orientation > 180) detectOrientation = 0;
-                else detectOrientation = (cameraOrientation - orientation + 360) % 360;
+                if (0 == orientation) detectOrientation = cameraOrientation;
+                else if (90 == orientation) detectOrientation = 180;
+                else if (180 == orientation) detectOrientation = 360 - cameraOrientation;
+                else if (270 == orientation) detectOrientation = 0;
                 Log.d("faceori", String.format("Current Detect Orientation := %d", detectOrientation));
             }
         };
@@ -100,7 +103,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        setCameraFaceDirection(1);
+        setCameraFaceDirection(0);
         mOrientationEventListener.enable();
     }
 

@@ -36,15 +36,16 @@ import java.util.Date;
 
 public class MainActivity extends Activity {
     public static final String TAG = "faces";
+    private static final String CAMERA_SWITCH_TIMES = "camera_switch_times";
 
     private CameraPreview mPreview;
     private FaceMask mFaceMask;
     private FocusView mFocusView;
 
-    //count times of camera switch
-    private int cameraSwitchTimes = -1;
+    // count times of camera switch
+    private int cameraSwitchTimes = 0;
 
-    //camera switch animation
+    // camera switch animation
     private Animation mScaleInAnimation;
     private Animation mScaleOutAnimation;
 
@@ -101,7 +102,6 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         ActionBar actionBar = getActionBar();
         if (null != actionBar) actionBar.hide();
 
@@ -114,6 +114,11 @@ public class MainActivity extends Activity {
         preview.addView(mPreview);
         preview.addView(mFaceMask);
         preview.addView(mFocusView);
+
+        if (null != savedInstanceState) {
+            cameraSwitchTimes = savedInstanceState.getInt(CAMERA_SWITCH_TIMES);
+            mPreview.setCameraFaceDirection(cameraSwitchTimes);
+        }
 
         mScaleInAnimation = AnimationUtils.loadAnimation(this, R.anim.scale_in);
         mScaleInAnimation.setAnimationListener(new Animation.AnimationListener() {
@@ -149,7 +154,6 @@ public class MainActivity extends Activity {
         cameraSwitchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // TODO
                 cameraSwitchTimes++;
                 preview.startAnimation(mScaleInAnimation);
 
@@ -199,5 +203,11 @@ public class MainActivity extends Activity {
         if (bitmap != null) {
             showImageButton.setImageBitmap(Util.rotateBitmap(bitmap, -90,cameraSwitchTimes % 2));
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putInt(CAMERA_SWITCH_TIMES, cameraSwitchTimes % 2);
+        super.onSaveInstanceState(outState);
     }
 }
