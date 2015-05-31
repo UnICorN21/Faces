@@ -28,6 +28,8 @@ public class FaceDetector {
     private int orientation; // set by native code
     private static FaceDetector instance;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
+    
+    public static int face_count=0;
 
     private FaceDetector() { /* null */ }
 
@@ -62,6 +64,7 @@ public class FaceDetector {
                     rect.set(canvas.getWidth() * face.left, canvas.getHeight() * face.top,
                             canvas.getWidth() * face.right, canvas.getHeight() * face.bottom);
                     canvas.drawRect(rect, paint);
+                    face_count++;
                 }
                 canvas.save(Canvas.ALL_SAVE_FLAG);
                 canvas.restore();

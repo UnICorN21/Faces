@@ -1,5 +1,6 @@
 package com.unicorn.faces.app.views.activities;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -24,7 +25,7 @@ public class ImageShowActivity extends Activity {
     private String imgPath;
     private ImageView imageView;
 
-    public static int faceDirection=0;
+    public int faceDirection=0;
 
     private Handler handler;
     private Runnable runnable;
@@ -34,6 +35,8 @@ public class ImageShowActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_showimg);
+
+        final ActionBar actionBar = getActionBar();
 
         handler=new Handler();
 
@@ -45,6 +48,11 @@ public class ImageShowActivity extends Activity {
                     bitmap= Util.rotateBitmap(bitmap,-90,faceDirection);
                     imageView.setImageBitmap(bitmap);
                     progressBar.setVisibility(View.GONE);
+                    
+                    if (actionBar != null) {
+                        actionBar.setTitle(FaceDetector.face_count+" people have been detected");
+                    }
+                    
                     handler.removeCallbacks(runnable);
                 }
                 handler.postDelayed(this,500);
@@ -56,6 +64,8 @@ public class ImageShowActivity extends Activity {
         Intent intent =getIntent();
         imgPath=intent.getStringExtra("imgPath");
         faceDirection=intent.getIntExtra("faceDirection",1);
+        
+        actionBar.setTitle(imgPath);
 
         imageView.setBackgroundColor(Color.WHITE);
 
