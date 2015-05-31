@@ -147,6 +147,7 @@ public class MainActivity extends Activity {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        FaceDetector.face_count=0;
                         mPreview.takePicture(null, null, mPicture);
                     }
                 }
