@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 import com.unicorn.faces.app.R;
 import com.unicorn.faces.app.Util;
+import com.unicorn.faces.app.natives.FaceDetector;
 
 
 /**

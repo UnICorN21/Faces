@@ -1,6 +1,8 @@
 package com.unicorn.faces.app.natives;
 
+import android.content.Context;
 import android.graphics.*;
+import android.view.OrientationEventListener;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,7 +30,7 @@ public class FaceDetector {
     private int orientation; // set by native code
     private static FaceDetector instance;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    
+
     public static int face_count=0;
 
     private FaceDetector() { /* null */ }
@@ -47,8 +49,8 @@ public class FaceDetector {
      * Save Image with faces found on it.
      * @param imgFile: The File object using for saving image.
      */
-    public FutureTask<Face[]> saveImage(final File imgFile, final byte[] data, final int length, final boolean fixed)
-            throws FileNotFoundException, RuntimeException {
+    public FutureTask<Face[]> saveImage(final File imgFile, final byte[] data, final int length, final boolean fixed,
+                                        final int deviceOrientation) throws FileNotFoundException, RuntimeException {
         FutureTask<Face[]> futureTask = new FutureTask<Face[]>(new Callable<Face[]>() {
             @Override
             public Face[] call() throws Exception {
@@ -61,8 +63,13 @@ public class FaceDetector {
                 paint.setStyle(Paint.Style.STROKE);
                 for (Face face: faces) {
                     RectF rect = new RectF();
-                    rect.set(canvas.getWidth() * face.left, canvas.getHeight() * face.top,
-                            canvas.getWidth() * face.right, canvas.getHeight() * face.bottom);
+                    if (0 == deviceOrientation || 180 == deviceOrientation) {
+                        rect.set(canvas.getHeight() * face.left, canvas.getWidth() * face.top,
+                                canvas.getHeight() * face.right, canvas.getWidth() * face.bottom);
+                    } else {
+                        rect.set(canvas.getWidth() * face.left, canvas.getHeight() * face.top,
+                                canvas.getWidth() * face.right, canvas.getHeight() * face.bottom);
+                    }
                     canvas.drawRect(rect, paint);
                     face_count++;
                 }

@@ -2,6 +2,7 @@ package com.unicorn.faces.app.views.activities;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -10,10 +11,7 @@ import android.hardware.Camera.PictureCallback;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.*;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
@@ -56,6 +54,9 @@ public class MainActivity extends Activity {
 
     private ImageButton showImageButton;
 
+    private OrientationEventListener mOrientationEventListener;
+    int deviceOri = 0;
+
     private PictureCallback mPicture = new PictureCallback() {
 
         @Override
@@ -68,7 +69,7 @@ public class MainActivity extends Activity {
             }
 
             try {
-                FaceDetector.getSingleton().saveImage(pictureFile, data, data.length, true);
+                FaceDetector.getSingleton().saveImage(pictureFile, data, data.length, true, deviceOri);
                 //set the ImageButton picture
                 Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
                 setImgButtonPreviewPicture(Util.scaleBitmap(bitmap,showImageButton.getWidth(),showImageButton.getHeight()));
@@ -96,6 +97,12 @@ public class MainActivity extends Activity {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         imgPath = mediaStorageDir.getPath() + File.separator + "IMG_" + timeStamp + ".jpg";
         return new File(imgPath);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mOrientationEventListener.disable();
     }
 
     @Override
@@ -175,6 +182,16 @@ public class MainActivity extends Activity {
                 }
             }
         });
+
+        mOrientationEventListener = new OrientationEventListener(this) {
+            @Override
+            public void onOrientationChanged(int orientation) {
+                orientation = (int)Math.round(orientation / 90.0) * 90;
+                deviceOri = orientation;
+                Log.d("deviceOri", "Current device orientation: " + deviceOri);
+            }
+        };
+        mOrientationEventListener.enable();
     }
 
 
